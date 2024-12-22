@@ -1,6 +1,7 @@
 import React, { Dispatch, SetStateAction } from 'react';
 import { Todo } from '../../types/Todo';
-import { FilterBy } from '../../types/FilterBy';
+import { FilterBy, filterByValues } from '../../types/FilterBy';
+import classNames from 'classnames';
 
 type Props = {
   todos: Todo[];
@@ -18,8 +19,11 @@ export const Footer: React.FC<Props> = ({
   const activeTodos = todos.filter(todo => !todo.completed);
 
   const handleClearCompleted = () => {
-    setTodos(todos.filter(todo => !todo.completed));
+    setTodos(activeTodos);
   };
+
+  const displayFilter = (filter: FilterBy) =>
+    filter.charAt(0).toUpperCase() + filter.slice(1);
 
   return (
     <footer className="todoapp__footer" data-cy="Footer">
@@ -28,38 +32,21 @@ export const Footer: React.FC<Props> = ({
       </span>
 
       <nav className="filter" data-cy="Filter">
-        <a
-          href="#/"
-          data-cy="FilterLinkAll"
-          className={`filter__link ${currentFilter === FilterBy.All && 'selected'}`}
-          onClick={() => {
-            setCurrentFilter(FilterBy.All);
-          }}
-        >
-          All
-        </a>
-
-        <a
-          href="#/active"
-          data-cy="FilterLinkActive"
-          className={`filter__link ${currentFilter === FilterBy.Active && 'selected'}`}
-          onClick={() => {
-            setCurrentFilter(FilterBy.Active);
-          }}
-        >
-          Active
-        </a>
-
-        <a
-          href="#/completed"
-          data-cy="FilterLinkCompleted"
-          className={`filter__link ${currentFilter === FilterBy.Completed && 'selected'}`}
-          onClick={() => {
-            setCurrentFilter(FilterBy.Completed);
-          }}
-        >
-          Completed
-        </a>
+        {filterByValues.map(filter => (
+          <a
+            key={filter}
+            href={`#/${filter.toLowerCase()}`}
+            data-cy={`FilterLink${displayFilter(filter)}`}
+            className={classNames('filter__link', {
+              selected: currentFilter === filter,
+            })}
+            onClick={() => {
+              setCurrentFilter(filter);
+            }}
+          >
+            {displayFilter(filter)}
+          </a>
+        ))}
       </nav>
 
       <button

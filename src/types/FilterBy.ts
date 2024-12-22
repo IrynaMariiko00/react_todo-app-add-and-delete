@@ -3,3 +3,5 @@ export enum FilterBy {
   Active = 'active',
   All = 'all',
 }
+
+export const filterByValues = Object.values(FilterBy);

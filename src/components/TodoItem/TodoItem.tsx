@@ -4,9 +4,14 @@ import classNames from 'classnames';
 type Props = {
   todo: Todo;
   onToggleStatus: (v: Todo) => void;
+  handleDeleteTodo: (v: number) => void;
 };
 
-export const TodoItem: React.FC<Props> = ({ todo, onToggleStatus }) => {
+export const TodoItem: React.FC<Props> = ({
+  todo,
+  onToggleStatus,
+  handleDeleteTodo,
+}) => {
   const handleChangeStatus = () => {
     const updatedTodo = { ...todo, completed: !todo.completed };
 
@@ -37,7 +42,12 @@ export const TodoItem: React.FC<Props> = ({ todo, onToggleStatus }) => {
       </span>
 
       {/* Remove button appears only on hover */}
-      <button type="button" className="todo__remove" data-cy="TodoDelete">
+      <button
+        type="button"
+        className="todo__remove"
+        data-cy="TodoDelete"
+        onClick={() => handleDeleteTodo(todo.id)}
+      >
         ×
       </button>
 

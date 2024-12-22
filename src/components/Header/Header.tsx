@@ -13,9 +13,9 @@ export const Header: React.FC<Props> = ({ onTodo, onError }) => {
   };
 
   const handleAddTodo = (event: React.FormEvent<HTMLFormElement>) => {
-    if (query.trim().length > 0) {
-      event.preventDefault();
+    event.preventDefault();
 
+    if (query.trim().length > 0) {
       const newTodo = {
         id: +new Date(),
         userId: 2177,
@@ -26,9 +26,11 @@ export const Header: React.FC<Props> = ({ onTodo, onError }) => {
       onTodo(newTodo);
       setQuery('');
       onError('');
-    } else {
-      onError('Title should not be empty');
+
+      return;
     }
+
+    onError('Title should not be empty');
   };
 
   return (
