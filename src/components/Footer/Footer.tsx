@@ -5,23 +5,19 @@ import classNames from 'classnames';
 
 type Props = {
   todos: Todo[];
-  setTodos: Dispatch<SetStateAction<Todo[]>>;
+  activeTodos: Todo[];
   currentFilter: FilterBy;
   setCurrentFilter: Dispatch<SetStateAction<FilterBy>>;
+  handleClearCompleted: () => void;
 };
 
 export const Footer: React.FC<Props> = ({
   currentFilter,
   setCurrentFilter,
   todos,
-  setTodos,
+  activeTodos,
+  handleClearCompleted,
 }) => {
-  const activeTodos = todos.filter(todo => !todo.completed);
-
-  const handleClearCompleted = () => {
-    setTodos(activeTodos);
-  };
-
   const displayFilter = (filter: FilterBy) =>
     filter.charAt(0).toUpperCase() + filter.slice(1);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { UserWarning } from './UserWarning';
 import { Header } from './components/Header';
 import { Todo } from './types/Todo';
@@ -14,6 +14,10 @@ export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [error, setError] = useState('');
   const [currentFilter, setCurrentFilter] = useState<FilterBy>(FilterBy.All);
+  const [currentTodoIds, setCurrentTodoIds] = useState<number[]>([]);
+  const [isInputDisabled, setIsInputDisabled] = useState(false);
+  const [query, setQuery] = useState('');
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     setError('');
@@ -31,20 +35,82 @@ export const App: React.FC = () => {
   );
 
   const handleNewTodo = (newTodo: Todo) => {
+    const newTodoWithStatus = { ...newTodo, isPending: true };
+    const newTodosList = [...todos, newTodoWithStatus];
+
+    setIsInputDisabled(true);
+    setCurrentTodoIds([...currentTodoIds, newTodo.id]);
+    setTodos(newTodosList);
+
     addTodos(newTodo)
       .then(todoFromServer => {
-        setTodos([...todos, todoFromServer]);
+        setTodos(currentTodos =>
+          currentTodos.map(todo =>
+            todo.id === newTodo.id
+              ? { ...todo, id: todoFromServer.id, isPending: false }
+              : todo,
+          ),
+        );
+        setQuery('');
       })
-      .catch(() => setError(ErrorMessage.Add));
+      .catch(() => {
+        setTodos(currentTodos =>
+          currentTodos.filter(todo => todo.id !== newTodo.id),
+        );
+        setError(ErrorMessage.Add);
+      })
+      .finally(() => {
+        setCurrentTodoIds([]);
+        setIsInputDisabled(false);
+      });
   };
 
   const handleDeleteTodo = (todoId: number) => {
+    setCurrentTodoIds([...currentTodoIds, todoId]);
     deleteTodos(todoId)
-      .then(() => setTodos(todos.filter(todo => todo.id !== todoId)))
-      .catch(() => setError(ErrorMessage.Delete));
+      .then(() => {
+        setTodos(todos.filter(todo => todo.id !== todoId));
+      })
+      .catch(() => setError(ErrorMessage.Delete))
+      .finally(() => setCurrentTodoIds([]));
+  };
+
+  useEffect(() => {
+    if (inputRef.current && !isInputDisabled) {
+      inputRef.current.focus();
+    }
+  }, [isInputDisabled, inputRef, todos]);
+
+  const activeTodos = todos.filter(todo => !todo.completed && !todo.isPending);
+
+  const handleClearCompleted = () => {
+    const completedTodos = todos.filter(todo => todo.completed);
+
+    const failedDeletions: Todo[] = [];
+
+    Promise.all(
+      completedTodos.map(todo =>
+        deleteTodos(todo.id).catch(() => {
+          failedDeletions.push(todo);
+        }),
+      ),
+    ).finally(() => {
+      if (failedDeletions.length) {
+        setError(ErrorMessage.Delete);
+      }
+
+      const newTodos = todos.filter(
+        todo =>
+          !todo.completed ||
+          failedDeletions.some(failed => failed.id === todo.id),
+      );
+
+      setTodos(newTodos); // Оновлюємо список todos
+    });
   };
 
   const toggleTodoStatus = (updatedTodo: Todo) => {
+    setCurrentTodoIds([...currentTodoIds, updatedTodo.id]);
     setTodos(prevTodos => {
       const copyTodos = [...prevTodos];
 
@@ -68,7 +134,14 @@ export const App: React.FC = () => {
       <h1 className="todoapp__title">todos</h1>
 
       <div className="todoapp__content">
-        <Header onTodo={handleNewTodo} onError={setError} />
+        <Header
+          onTodo={handleNewTodo}
+          onError={setError}
+          isInputDisabled={isInputDisabled}
+          query={query}
+          setQuery={setQuery}
+          inputRef={inputRef}
+        />
 
         <section className="todoapp__main" data-cy="TodoList">
           {filtered.map(todo => (
@@ -77,6 +150,7 @@ export const App: React.FC = () => {
               todo={todo}
               onToggleStatus={toggleTodoStatus}
               handleDeleteTodo={handleDeleteTodo}
+              isLoading={currentTodoIds.includes(todo.id)}
             />
           ))}
         </section>
@@ -86,7 +160,8 @@ export const App: React.FC = () => {
             currentFilter={currentFilter}
             setCurrentFilter={setCurrentFilter}
             todos={todos}
-            setTodos={setTodos}
+            handleClearCompleted={handleClearCompleted}
+            activeTodos={activeTodos}
           />
         )}
       </div>

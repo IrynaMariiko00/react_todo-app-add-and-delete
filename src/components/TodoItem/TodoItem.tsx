@@ -5,12 +5,14 @@ type Props = {
   todo: Todo;
   onToggleStatus: (v: Todo) => void;
   handleDeleteTodo: (v: number) => void;
+  isLoading: boolean;
 };
 
 export const TodoItem: React.FC<Props> = ({
   todo,
   onToggleStatus,
   handleDeleteTodo,
+  isLoading,
 }) => {
   const handleChangeStatus = () => {
     const updatedTodo = { ...todo, completed: !todo.completed };
@@ -47,12 +49,18 @@ export const TodoItem: React.FC<Props> = ({
         className="todo__remove"
         data-cy="TodoDelete"
         onClick={() => handleDeleteTodo(todo.id)}
+        disabled={isLoading}
       >
         ×
       </button>
 
-      {/* overlay will cover the todo while it is being deleted or updated */}
-      <div data-cy="TodoLoader" className="modal overlay">
+      {/* Overlay for loader during status change */}
+      <div
+        data-cy="TodoLoader"
+        className={classNames('modal overlay', {
+          'is-active': isLoading,
+        })}
+      >
         <div className="modal-background has-background-white-ter" />
         <div className="loader" />
       </div>
